@@ -71,7 +71,7 @@ def connect_emulator(emulator_id='emulator-5554'):
     return d
 
 # Função para realizar pesquisas no Bing
-def perform_searches(d, coordinates, queries, search_times=3):
+def perform_searches(d, coordinates, queries, search_times=23):
     x1, y1, x2, y2 = coordinates
     for _ in range(search_times):
         random.shuffle(queries)
