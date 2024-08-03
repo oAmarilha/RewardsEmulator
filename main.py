@@ -121,7 +121,7 @@ def main():
     # Processo de logout e login no Bing
     logout_patterns = [
         r'<node[^>]*resource-id="com\.microsoft\.bing:id/sa_profile_button"[^>]*bounds="\[([0-9]+),([0-9]+)\]\[([0-9]+),([0-9]+)\]"[^>]*>',
-        r'<node[^>]*text="Settings"[^>]*bounds="\[([0-9]+),([0-9]+)\]\[([0-9]+),([0-9]+)\]"[^>]*>',
+        r'<node[^>]*text="Victor Amarilha"[^>]*bounds="\[([0-9]+),([0-9]+)\]\[([0-9]+),([0-9]+)\]"[^>]*>',
         r'<node[^>]*text="Sign out"[^>]*bounds="\[([0-9]+),([0-9]+)\]\[([0-9]+),([0-9]+)\]"[^>]*>',
         r'<node[^>]*text="Sign in"[^>]*bounds="\[([0-9]+),([0-9]+)\]\[([0-9]+),([0-9]+)\]"[^>]*>',
         r'<node[^>]*text="victor_amarilha@outlook.com"[^>]*bounds="\[([0-9]+),([0-9]+)\]\[([0-9]+),([0-9]+)\]"[^>]*>'
@@ -129,6 +129,7 @@ def main():
     
     for pattern in logout_patterns:
         coords = extract_coordinates(save_xml(d), pattern)
+        time.sleep(5)
         d.click(coords[0] + (coords[2] - coords[0]) / 2, coords[1] + (coords[3] - coords[1]) / 2)
     
     time.sleep(5)
