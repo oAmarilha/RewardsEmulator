@@ -25,6 +25,7 @@ def get_keywords(seed_words):
 
 # Função para salvar a hierarquia da interface em um arquivo XML
 def save_xml(d, filename="hierarchy_dump.xml"):
+    print("Hierarquia da interface salva em 'hierarchy_dump.xml'. Verifique o arquivo para encontrar os elementos.")
     time.sleep(5)
     xml_dump = d.dump_hierarchy()
     with open(filename, "w", encoding="utf-8") as f:
@@ -37,7 +38,7 @@ def wait_for_emulator(emulator_id='emulator-5554'):
         result = subprocess.run(['adb', '-s', emulator_id, 'get-state'], capture_output=True, text=True)
         if 'device' in result.stdout:
             print("Emulador pronto!")
-            time.sleep(15)
+            time.sleep(10)
             break
         print("Esperando o emulador iniciar...")
         time.sleep(15)
@@ -56,7 +57,7 @@ def extract_coordinates(xml_file, pattern):
 
 # Função para iniciar o emulador
 def start_emulator(emulator_path, avd_name):
-    subprocess.Popen([emulator_path, '-avd', avd_name])
+    subprocess.Popen([emulator_path, '-avd', avd_name, '-snapshot', 'avdsave'])
     wait_for_emulator()
 
 # Função para conectar ao emulador
@@ -71,7 +72,7 @@ def connect_emulator(emulator_id='emulator-5554'):
     return d
 
 # Função para realizar pesquisas no Bing
-def perform_searches(d, coordinates, queries, search_times=23):
+def perform_searches(d, coordinates, queries, search_times=25):
     x1, y1, x2, y2 = coordinates
     for _ in range(search_times):
         random.shuffle(queries)
@@ -86,7 +87,7 @@ def perform_searches(d, coordinates, queries, search_times=23):
 
 # Função principal para executar o fluxo de trabalho
 def main():
-    avd_name = "Pixel_8_API_35"
+    avd_name = "Pixel_8_Edited_API_34"
     emulator_path = "emulator"
     start_emulator(emulator_path, avd_name)
     
@@ -104,13 +105,11 @@ def main():
         time.sleep(1)
     
     time.sleep(4)
-    xml_file = save_xml(d)
-    print("Hierarquia da interface salva em 'hierarchy_dump.xml'. Verifique o arquivo para encontrar os elementos.")
     
     search_box_pattern = r'<node[^>]*resource-id="com\.microsoft\.bing:id/placeholder_search_box"[^>]*bounds="\[([0-9]+),([0-9]+)\]\[([0-9]+),([0-9]+)\]"[^>]*>'
     search_box_coords = None
     while not search_box_coords:
-        search_box_coords = extract_coordinates(xml_file, search_box_pattern)
+        search_box_coords = extract_coordinates(save_xml(d), search_box_pattern)
     print(f"Coordenadas do search_box: {search_box_coords}")
     
     seed_words = ['car', 'price', 'man', 'new']
@@ -121,15 +120,17 @@ def main():
     # Processo de logout e login no Bing
     logout_patterns = [
         r'<node[^>]*resource-id="com\.microsoft\.bing:id/sa_profile_button"[^>]*bounds="\[([0-9]+),([0-9]+)\]\[([0-9]+),([0-9]+)\]"[^>]*>',
-        r'<node[^>]*text="Victor Amarilha"[^>]*bounds="\[([0-9]+),([0-9]+)\]\[([0-9]+),([0-9]+)\]"[^>]*>',
+        r'<node[^>]*text="[^"]*Victor Amarilha[^"]*"[^>]*bounds="\[([0-9]+),([0-9]+)\]\[([0-9]+),([0-9]+)\]"[^>]*>',
         r'<node[^>]*text="Sign out"[^>]*bounds="\[([0-9]+),([0-9]+)\]\[([0-9]+),([0-9]+)\]"[^>]*>',
         r'<node[^>]*text="Sign in"[^>]*bounds="\[([0-9]+),([0-9]+)\]\[([0-9]+),([0-9]+)\]"[^>]*>',
         r'<node[^>]*text="victor_amarilha@outlook.com"[^>]*bounds="\[([0-9]+),([0-9]+)\]\[([0-9]+),([0-9]+)\]"[^>]*>'
     ]
     
     for pattern in logout_patterns:
-        coords = extract_coordinates(save_xml(d), pattern)
-        time.sleep(5)
+        while True:
+            coords = extract_coordinates(save_xml(d), pattern)
+            if coords != None:
+                break
         d.click(coords[0] + (coords[2] - coords[0]) / 2, coords[1] + (coords[3] - coords[1]) / 2)
     
     time.sleep(5)
@@ -137,10 +138,32 @@ def main():
     time.sleep(2)
     d.app_start("com.microsoft.bing")
     
+    while not search_box_coords:
+        search_box_coords = extract_coordinates(save_xml(d), search_box_pattern)
+    print(f"Coordenadas do search_box: {search_box_coords}")
+
     perform_searches(d, search_box_coords, queries)
     
+    logout_patterns = [
+        r'<node[^>]*resource-id="com\.microsoft\.bing:id/sa_profile_button"[^>]*bounds="\[([0-9]+),([0-9]+)\]\[([0-9]+),([0-9]+)\]"[^>]*>',
+        r'<node[^>]*text="Victor Amarilha"[^>]*bounds="\[([0-9]+),([0-9]+)\]\[([0-9]+),([0-9]+)\]"[^>]*>',
+        r'<node[^>]*text="Sign out"[^>]*bounds="\[([0-9]+),([0-9]+)\]\[([0-9]+),([0-9]+)\]"[^>]*>',
+        r'<node[^>]*text="Sign in"[^>]*bounds="\[([0-9]+),([0-9]+)\]\[([0-9]+),([0-9]+)\]"[^>]*>',
+        r'<node[^>]*text="victor_amarilha@hotmail.com"[^>]*bounds="\[([0-9]+),([0-9]+)\]\[([0-9]+),([0-9]+)\]"[^>]*>'
+    ]
+
+    for pattern in logout_patterns:
+        while True:
+            coords = extract_coordinates(save_xml(d), pattern)
+            if coords != None:
+                break
+        d.click(coords[0] + (coords[2] - coords[0]) / 2, coords[1] + (coords[3] - coords[1]) / 2)
+
+
     d.app_stop("com.microsoft.bing")
+    subprocess.run(['adb', '-s', 'emulator-5554', 'emu', 'avd', 'snapshot', 'save', 'avdsave'])
     subprocess.run(['adb', '-s', 'emulator-5554', 'emu', 'kill'])
+
 
 if __name__ == "__main__":
     main()
